@@ -1,0 +1,75 @@
+perfumes:
+    name: Perfumes
+    singular_name: Perfume
+    slug: perfumes
+    singular_slug: perfume
+    default_status: published
+    show_in_menu: true
+    sort: -datecreated
+    fields:
+        nome:
+            type: text
+            label: Nome do Perfume
+            group: Principal
+        slug:
+            type: slug
+            uses: nome
+            label: Slug (URL)
+            group: Principal
+        essencia:
+            type: select
+            label: Essência (Categoria Principal)
+            placeholder: Selecione a Categoria
+            values: [feminino, masculino, kits-presentes]
+            default: feminino
+            group: Principal
+        descricao_curta:
+            type: textarea
+            label: Descrição Curta
+            limit: 200
+            group: Conteúdo
+        descricao_completa:
+            type: html
+            label: Descrição Completa
+            group: Conteúdo
+        imagem_principal:
+            type: image
+            label: Imagem do Produto
+            group: Mídia
+        preco:
+            type: number
+            label: Preço (R$)
+            group: Principal
+            pattern: '^\d+(\.\d{1,2})?$'
+            min: 0.01
+    
+    viewless: false
+    records_per_page: 12
+    listing_template: listing_perfumes.twig
+    record_template: record_perfume.twig
+
+# Adicionamos um ContentType simples para Páginas, caso você precise
+paginas:
+    name: Páginas
+    singular_name: Página
+    slug: paginas
+    singular_slug: pagina
+    default_status: published
+    show_in_menu: true
+    fields:
+        titulo:
+            type: text
+            label: Título
+            group: Conteúdo
+        slug:
+            type: slug
+            uses: titulo
+            label: Slug (URL)
+            group: Conteúdo
+        conteudo:
+            type: html
+            label: Conteúdo Principal
+            group: Conteúdo
+    viewless: false
+    listing_template: listing.twig
+    record_template: page.twig
