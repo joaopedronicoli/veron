@@ -22,7 +22,7 @@ export default function Header() {
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const { items, itemCount, updateQuantity, removeItem } = useCart();
-  const { isAuthenticated, isAdmin, user, signOut, loading } = useAuth();
+  const { isAuthenticated, isAdmin, user, signOut } = useAuth();
   const navigate = useNavigate();
 
   // Close user menu when clicking outside
@@ -53,7 +53,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="bg-white border-b border-gray-100">
+      <header className="bg-white border-b border-gray-100 relative z-50">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex-1" />
@@ -95,7 +95,6 @@ export default function Header() {
                   className={`hover:text-gold transition-colors duration-300 ${isAuthenticated ? 'text-gold' : ''
                     }`}
                   aria-label="Conta"
-                  disabled={loading}
                 >
                   <User className="w-5 h-5" />
                 </button>
