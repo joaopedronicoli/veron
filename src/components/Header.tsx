@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { Search, ShoppingBag, User } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { Search, ShoppingBag, User, LogOut, Settings, Package } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import SearchModal from './SearchModal';
 import CartDrawer from './CartDrawer';
 
@@ -17,7 +18,38 @@ const menuItems = [
 export default function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
   const { items, itemCount, updateQuantity, removeItem } = useCart();
+  const { isAuthenticated, isAdmin, user, signOut, loading } = useAuth();
+  const navigate = useNavigate();
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleUserClick = () => {
+    if (isAuthenticated) {
+      setIsUserMenuOpen(!isUserMenuOpen);
+    } else {
+      navigate('/login');
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    setIsUserMenuOpen(false);
+    navigate('/');
+  };
 
   return (
     <>
@@ -55,12 +87,69 @@ export default function Header() {
                   </span>
                 )}
               </button>
-              <button
-                className="hover:text-gold transition-colors duration-300"
-                aria-label="Conta"
-              >
-                <User className="w-5 h-5" />
-              </button>
+
+              {/* User Menu */}
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={handleUserClick}
+                  className={`hover:text-gold transition-colors duration-300 ${isAuthenticated ? 'text-gold' : ''
+                    }`}
+                  aria-label="Conta"
+                  disabled={loading}
+                >
+                  <User className="w-5 h-5" />
+                </button>
+
+                {/* Dropdown Menu */}
+                {isUserMenuOpen && isAuthenticated && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-100 py-2 z-50">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {user?.email}
+                      </p>
+                    </div>
+
+                    <Link
+                      to="/minha-conta"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <User className="w-4 h-4" />
+                      Minha Conta
+                    </Link>
+
+                    <Link
+                      to="/meus-pedidos"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <Package className="w-4 h-4" />
+                      Meus Pedidos
+                    </Link>
+
+                    {isAdmin && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-gold hover:bg-gold/5 transition-colors"
+                      >
+                        <Settings className="w-4 h-4" />
+                        Área Admin
+                      </Link>
+                    )}
+
+                    <div className="border-t border-gray-100 mt-1 pt-1">
+                      <button
+                        onClick={handleSignOut}
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Sair
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -92,3 +181,4 @@ export default function Header() {
     </>
   );
 }
+
