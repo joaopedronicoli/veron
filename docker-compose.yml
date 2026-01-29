@@ -1,0 +1,29 @@
+version: "3.7"
+
+services:
+  veron:
+    build: .
+    image: veron-web:latest
+
+    networks:
+      - network_public
+
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.veron.rule=Host(`veron.pelg.com.br`)
+        - traefik.http.routers.veron.entrypoints=websecure
+        - traefik.http.routers.veron.tls.certresolver=letsencryptresolver
+        - traefik.http.services.veron.loadbalancer.server.port=80
+        - traefik.http.services.veron.loadbalancer.passHostHeader=true
+
+networks:
+  network_public:
+    external: true
+    name: network_public
