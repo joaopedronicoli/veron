@@ -1,10 +1,14 @@
 FROM node:20-alpine AS build
+
+ARG VITE_API_URL
+ARG VITE_GOOGLE_CLIENT_ID
+
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-ENV VITE_API_URL=https://veron.pelg.com.br/api
-ENV VITE_GOOGLE_CLIENT_ID=132451224535-lk4dop0uqsegg0c3dnr91qi82vt2qv05.apps.googleusercontent.com
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 RUN npm run build
 
 FROM nginx:alpine

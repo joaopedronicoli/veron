@@ -21,6 +21,8 @@ JWT_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=7d
 GOOGLE_CLIENT_ID=
 CORS_ORIGIN=https://veron.pelg.com.br
+VITE_API_URL=https://veron.pelg.com.br/api
+VITE_GOOGLE_CLIENT_ID=
 EOF
   echo ".env criado. Edite os valores de JWT_SECRET e JWT_REFRESH_SECRET antes de continuar."
   exit 1
@@ -31,7 +33,10 @@ export $(grep -v '^#' "$ENV_FILE" | grep -v '^$' | xargs)
 
 echo "=== Build das imagens ==="
 docker build -t veron-api:latest "$APP_DIR/backend"
-docker build -t veron-web:latest "$APP_DIR"
+docker build \
+  --build-arg VITE_API_URL="$VITE_API_URL" \
+  --build-arg VITE_GOOGLE_CLIENT_ID="$VITE_GOOGLE_CLIENT_ID" \
+  -t veron-web:latest "$APP_DIR"
 
 echo ""
 echo "=== Deploy do stack ==="
