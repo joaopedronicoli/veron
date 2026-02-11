@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import Header from './components/Header';
@@ -17,8 +18,11 @@ import MeusPedidosPage from './pages/MeusPedidosPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+
 function App() {
   return (
+    <GoogleOAuthProvider clientId={googleClientId}>
     <AuthProvider>
       <CartProvider>
         <BrowserRouter>
@@ -77,6 +81,7 @@ function App() {
         </BrowserRouter>
       </CartProvider>
     </AuthProvider>
+    </GoogleOAuthProvider>
   );
 }
 

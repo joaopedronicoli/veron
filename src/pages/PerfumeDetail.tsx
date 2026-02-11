@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { supabase, type Perfume } from '../lib/supabase';
+import { api, type Perfume } from '../lib/api';
 import { useCart } from '../context/CartContext';
 import { Loader2, ArrowLeft, ShoppingBag } from 'lucide-react';
 
@@ -18,19 +18,7 @@ export default function PerfumeDetail() {
         setLoading(true);
         setError(null);
 
-        const { data, error: fetchError } = await supabase
-          .from('perfumes')
-          .select('*')
-          .eq('slug', slug)
-          .maybeSingle();
-
-        if (fetchError) throw fetchError;
-
-        if (!data) {
-          setError('Perfume não encontrado');
-          return;
-        }
-
+        const data = await api.perfumes.getBySlug(slug!);
         setPerfume(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro ao carregar perfume');

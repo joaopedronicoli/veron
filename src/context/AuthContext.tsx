@@ -1,25 +1,15 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { api, setTokens, clearTokens, type User } from '../lib/api';
 
 export type UserRole = 'ADMIN' | 'USER';
 
-interface Profile {
-    id: string;
-    email: string;
-    role: UserRole;
-}
-
 interface AuthContextType {
     user: User | null;
-    session: Session | null;
-    profile: Profile | null;
-    role: UserRole | null;
     loading: boolean;
     isAuthenticated: boolean;
     isAdmin: boolean;
     signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-    signInWithGoogle: () => Promise<{ error: Error | null }>;
+    signInWithGoogle: (idToken: string) => Promise<{ error: Error | null }>;
     signOut: () => Promise<void>;
 }
 
@@ -27,108 +17,68 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
-    const [session, setSession] = useState<Session | null>(null);
-    const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const role = profile?.role ?? null;
     const isAuthenticated = !!user;
-    const isAdmin = role === 'ADMIN';
+    const isAdmin = user?.role === 'ADMIN';
 
-    // Fetch profile from profiles table
-    const fetchProfile = async (userId: string) => {
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('id, email, role')
-            .eq('id', userId)
-            .single();
-
-        if (error) {
-            console.error('Error fetching profile:', error);
-            return null;
-        }
-
-        return data as Profile;
-    };
-
-    // Initialize session on mount
-    useEffect(() => {
-        const initSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-
-            setSession(session);
-            setUser(session?.user ?? null);
-
-            if (session?.user) {
-                const profile = await fetchProfile(session.user.id);
-                setProfile(profile);
-            }
-
-            setLoading(false);
-        };
-
-        initSession();
-
-        // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (_event, session) => {
-                setSession(session);
-                setUser(session?.user ?? null);
-
-                if (session?.user) {
-                    const profile = await fetchProfile(session.user.id);
-                    setProfile(profile);
-                } else {
-                    setProfile(null);
-                }
-
+    const loadUser = useCallback(async () => {
+        try {
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
                 setLoading(false);
+                return;
             }
-        );
-
-        return () => {
-            subscription.unsubscribe();
-        };
+            const userData = await api.users.me();
+            setUser(userData);
+        } catch {
+            clearTokens();
+            setUser(null);
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    const signIn = async (email: string, password: string) => {
-        const { error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
+    useEffect(() => {
+        loadUser();
+    }, [loadUser]);
 
-        return { error: error ? new Error(error.message) : null };
+    const signIn = async (email: string, password: string) => {
+        try {
+            const result = await api.auth.login(email, password);
+            setTokens(result.accessToken, result.refreshToken);
+            setUser(result.user);
+            return { error: null };
+        } catch (err) {
+            return { error: err instanceof Error ? err : new Error('Erro ao fazer login') };
+        }
     };
 
-    const signInWithGoogle = async () => {
-        const { error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-                redirectTo: `${window.location.origin}/`,
-                queryParams: {
-                    access_type: 'offline',
-                    prompt: 'consent',
-                },
-            },
-        });
-
-        return { error: error ? new Error(error.message) : null };
+    const signInWithGoogle = async (idToken: string) => {
+        try {
+            const result = await api.auth.google(idToken);
+            setTokens(result.accessToken, result.refreshToken);
+            setUser(result.user);
+            return { error: null };
+        } catch (err) {
+            return { error: err instanceof Error ? err : new Error('Erro ao fazer login com Google') };
+        }
     };
 
     const signOut = async () => {
-        await supabase.auth.signOut();
+        try {
+            await api.auth.logout();
+        } catch {
+            // Ignore logout errors
+        }
+        clearTokens();
         setUser(null);
-        setSession(null);
-        setProfile(null);
     };
 
     return (
         <AuthContext.Provider
             value={{
                 user,
-                session,
-                profile,
-                role,
                 loading,
                 isAuthenticated,
                 isAdmin,

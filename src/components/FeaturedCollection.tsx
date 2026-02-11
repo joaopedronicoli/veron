@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase, type Perfume } from '../lib/supabase';
+import { api, type Perfume } from '../lib/api';
 import { Loader2 } from 'lucide-react';
 
 export default function FeaturedCollection() {
@@ -10,12 +10,7 @@ export default function FeaturedCollection() {
   useEffect(() => {
     async function fetchFeaturedPerfumes() {
       try {
-        const { data, error } = await supabase
-          .from('perfumes')
-          .select('*')
-          .limit(4);
-
-        if (error) throw error;
+        const data = await api.perfumes.list();
 
         if (data && data.length > 0) {
           const shuffled = [...data].sort(() => Math.random() - 0.5);

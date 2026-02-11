@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -27,14 +28,7 @@ export default function LoginPage() {
                 throw error;
             }
 
-            // Redirect based on role (admin goes to /admin, user goes to previous page or home)
-            // Note: isAdmin will be false here on first render, but auth state change will trigger re-render
-            // The actual redirect happens after auth state updates
-            setTimeout(() => {
-                // Small delay to allow auth state to update
-                navigate(from, { replace: true });
-            }, 100);
-
+            navigate(from, { replace: true });
         } catch (err) {
             setErro(err instanceof Error ? err.message : 'Erro ao fazer login.');
         } finally {
@@ -42,19 +36,26 @@ export default function LoginPage() {
         }
     };
 
-    const handleGoogleLogin = async () => {
+    const handleGoogleSuccess = async (response: CredentialResponse) => {
+        if (!response.credential) {
+            setErro('Erro ao obter credencial do Google.');
+            return;
+        }
+
         setLoading(true);
         setErro('');
 
         try {
-            const { error } = await signInWithGoogle();
+            const { error } = await signInWithGoogle(response.credential);
 
             if (error) {
                 throw error;
             }
-            // Supabase will redirect to Google, then back to the app
+
+            navigate(from, { replace: true });
         } catch (err) {
             setErro(err instanceof Error ? err.message : 'Erro ao fazer login com Google.');
+        } finally {
             setLoading(false);
         }
     };
@@ -136,18 +137,14 @@ export default function LoginPage() {
                 </div>
 
                 <div className="flex justify-center">
-                    <button
-                        onClick={handleGoogleLogin}
-                        disabled={loading}
-                        className="px-6 py-2.5 rounded-md bg-white text-sm text-gray-800 font-medium shadow-sm hover:bg-gray-50 border border-gray-300 flex items-center gap-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <img
-                            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                            alt="Google"
-                            className="w-5 h-5"
-                        />
-                        Entrar com o Google
-                    </button>
+                    <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={() => setErro('Erro ao fazer login com Google.')}
+                        theme="outline"
+                        size="large"
+                        text="signin_with"
+                        shape="rectangular"
+                    />
                 </div>
             </div>
         </div>

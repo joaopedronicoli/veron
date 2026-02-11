@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Search, Loader2 } from 'lucide-react';
-import { supabase, type Perfume } from '../lib/supabase';
+import { api, type Perfume } from '../lib/api';
 import { Link } from 'react-router-dom';
 
 interface SearchModalProps {
@@ -29,14 +29,8 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('perfumes')
-          .select('*')
-          .or(`nome.ilike.%${query}%,marca.ilike.%${query}%,descricao_curta.ilike.%${query}%`)
-          .limit(6);
-
-        if (error) throw error;
-        setResults(data || []);
+        const data = await api.perfumes.list({ search: query.trim() });
+        setResults(data.slice(0, 6));
       } catch (error) {
         console.error('Erro ao buscar perfumes:', error);
         setResults([]);

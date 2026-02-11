@@ -1,9 +1,52 @@
 version: "3.7"
 
 services:
-  veron:
-    build: .
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: veron-api:latest
+    restart: always
+
+    networks:
+      - network_public
+
+    environment:
+      - PORT=3001
+      - NODE_ENV=production
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - CORS_ORIGIN=${CORS_ORIGIN}
+
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.veron-api.rule=Host(`veron.pelg.com.br`) && PathPrefix(`/api`)
+        - traefik.http.routers.veron-api.entrypoints=websecure
+        - traefik.http.routers.veron-api.priority=2
+        - traefik.http.routers.veron-api.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.veron-api.service=veron-api
+        - traefik.http.services.veron-api.loadbalancer.server.port=3001
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: veron-web:latest
+    restart: always
 
     networks:
       - network_public
@@ -14,14 +57,14 @@ services:
       placement:
         constraints:
           - node.role == manager
-
       labels:
         - traefik.enable=true
         - traefik.http.routers.veron.rule=Host(`veron.pelg.com.br`)
         - traefik.http.routers.veron.entrypoints=websecure
+        - traefik.http.routers.veron.priority=1
         - traefik.http.routers.veron.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.veron.service=veron
         - traefik.http.services.veron.loadbalancer.server.port=80
-        - traefik.http.services.veron.loadbalancer.passHostHeader=true
 
 networks:
   network_public:

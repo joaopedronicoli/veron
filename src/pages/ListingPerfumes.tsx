@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { supabase, type Perfume } from '../lib/supabase';
+import { api, type Perfume } from '../lib/api';
 import { Loader2 } from 'lucide-react';
 
 export default function ListingPerfumes() {
@@ -30,17 +30,11 @@ export default function ListingPerfumes() {
         setLoading(true);
         setError(null);
 
-        let query = supabase.from('perfumes').select('*').order('created_at', { ascending: false });
+        const data = await api.perfumes.list(
+          essenciaFilter ? { essencia: essenciaFilter } : undefined
+        );
 
-        if (essenciaFilter) {
-          query = query.eq('essencia', essenciaFilter);
-        }
-
-        const { data, error: fetchError } = await query;
-
-        if (fetchError) throw fetchError;
-
-        setPerfumes(data || []);
+        setPerfumes(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro ao carregar perfumes');
       } finally {
