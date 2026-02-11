@@ -8,6 +8,7 @@ interface AuthContextType {
     loading: boolean;
     isAuthenticated: boolean;
     isAdmin: boolean;
+    signUp: (email: string, password: string, fullName?: string) => Promise<{ error: Error | null }>;
     signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
     signInWithGoogle: (idToken: string) => Promise<{ error: Error | null }>;
     signOut: () => Promise<void>;
@@ -42,6 +43,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         loadUser();
     }, [loadUser]);
+
+    const signUp = async (email: string, password: string, fullName?: string) => {
+        try {
+            const result = await api.auth.register(email, password, fullName);
+            setTokens(result.accessToken, result.refreshToken);
+            setUser(result.user);
+            return { error: null };
+        } catch (err) {
+            return { error: err instanceof Error ? err : new Error('Erro ao criar conta') };
+        }
+    };
 
     const signIn = async (email: string, password: string) => {
         try {
@@ -82,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 loading,
                 isAuthenticated,
                 isAdmin,
+                signUp,
                 signIn,
                 signInWithGoogle,
                 signOut,

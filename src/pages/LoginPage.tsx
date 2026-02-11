@@ -5,24 +5,41 @@ import { Loader2, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
+    const [isRegister, setIsRegister] = useState(false);
+    const [nome, setNome] = useState('');
     const [email, setEmail] = useState('');
     const [senha, setSenha] = useState('');
+    const [confirmarSenha, setConfirmarSenha] = useState('');
     const [erro, setErro] = useState('');
     const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
     const location = useLocation();
-    const { signIn, signInWithGoogle } = useAuth();
+    const { signIn, signUp, signInWithGoogle } = useAuth();
 
     const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
 
-    const handleLogin = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setErro('');
 
+        if (isRegister && senha !== confirmarSenha) {
+            setErro('As senhas não coincidem.');
+            setLoading(false);
+            return;
+        }
+
+        if (isRegister && senha.length < 6) {
+            setErro('A senha deve ter pelo menos 6 caracteres.');
+            setLoading(false);
+            return;
+        }
+
         try {
-            const { error } = await signIn(email, senha);
+            const { error } = isRegister
+                ? await signUp(email, senha, nome || undefined)
+                : await signIn(email, senha);
 
             if (error) {
                 throw error;
@@ -30,7 +47,7 @@ export default function LoginPage() {
 
             navigate(from, { replace: true });
         } catch (err) {
-            setErro(err instanceof Error ? err.message : 'Erro ao fazer login.');
+            setErro(err instanceof Error ? err.message : isRegister ? 'Erro ao criar conta.' : 'Erro ao fazer login.');
         } finally {
             setLoading(false);
         }
@@ -60,6 +77,14 @@ export default function LoginPage() {
         }
     };
 
+    const toggleMode = () => {
+        setIsRegister(!isRegister);
+        setErro('');
+        setNome('');
+        setSenha('');
+        setConfirmarSenha('');
+    };
+
     return (
         <div className="flex flex-col items-center justify-center min-h-[80vh] px-4 py-8">
             <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-6 sm:p-8 border border-gray-100">
@@ -86,11 +111,27 @@ export default function LoginPage() {
                         essence
                     </p>
                     <h2 className="text-lg font-medium text-gray-800 mt-6">
-                        Acesse sua conta
+                        {isRegister ? 'Criar sua conta' : 'Acesse sua conta'}
                     </h2>
                 </div>
 
-                <form onSubmit={handleLogin} className="space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    {isRegister && (
+                        <div>
+                            <label className="block text-gray-700 text-sm font-medium mb-1">
+                                Nome completo
+                            </label>
+                            <input
+                                type="text"
+                                value={nome}
+                                onChange={(e) => setNome(e.target.value)}
+                                className="w-full p-3 text-sm bg-gray-50 text-gray-900 border border-gray-300 rounded-md focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
+                                placeholder="Seu nome"
+                                disabled={loading}
+                            />
+                        </div>
+                    )}
+
                     <div>
                         <label className="block text-gray-700 text-sm font-medium mb-1">
                             E-mail
@@ -115,18 +156,35 @@ export default function LoginPage() {
                             value={senha}
                             onChange={(e) => setSenha(e.target.value)}
                             className="w-full p-3 text-sm bg-gray-50 text-gray-900 border border-gray-300 rounded-md focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
-                            placeholder="Sua senha"
+                            placeholder={isRegister ? 'Mínimo 6 caracteres' : 'Sua senha'}
                             required
                             disabled={loading}
                         />
                     </div>
+
+                    {isRegister && (
+                        <div>
+                            <label className="block text-gray-700 text-sm font-medium mb-1">
+                                Confirmar senha
+                            </label>
+                            <input
+                                type="password"
+                                value={confirmarSenha}
+                                onChange={(e) => setConfirmarSenha(e.target.value)}
+                                className="w-full p-3 text-sm bg-gray-50 text-gray-900 border border-gray-300 rounded-md focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
+                                placeholder="Repita a senha"
+                                required
+                                disabled={loading}
+                            />
+                        </div>
+                    )}
 
                     <button
                         type="submit"
                         disabled={loading}
                         className="w-full py-3 text-sm rounded-md text-white font-semibold transition-colors duration-300 flex items-center justify-center disabled:cursor-not-allowed bg-gold hover:bg-gold-dark disabled:bg-gold/50"
                     >
-                        {loading ? <Loader2 className="animate-spin w-5 h-5" /> : 'Entrar'}
+                        {loading ? <Loader2 className="animate-spin w-5 h-5" /> : isRegister ? 'Criar conta' : 'Entrar'}
                     </button>
                 </form>
 
@@ -145,6 +203,17 @@ export default function LoginPage() {
                         text="signin_with"
                         shape="rectangular"
                     />
+                </div>
+
+                <div className="mt-6 text-center">
+                    <button
+                        onClick={toggleMode}
+                        className="text-sm text-gray-600 hover:text-gold transition-colors"
+                    >
+                        {isRegister
+                            ? 'Já tem uma conta? Faça login'
+                            : 'Não tem conta? Cadastre-se'}
+                    </button>
                 </div>
             </div>
         </div>
