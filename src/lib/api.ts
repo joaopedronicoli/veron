@@ -82,8 +82,8 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 
   let res = await fetch(`${API_BASE}${path}`, { ...options, headers });
 
-  // If 401 and we have a refresh token, try to refresh
-  if (res.status === 401 && getRefreshToken()) {
+  // If 401 and we have a refresh token, try to refresh (but not for auth routes)
+  if (res.status === 401 && getRefreshToken() && !path.startsWith('/auth/')) {
     const newToken = await refreshAccessToken();
     if (newToken) {
       headers['Authorization'] = `Bearer ${newToken}`;
