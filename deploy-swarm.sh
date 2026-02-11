@@ -26,6 +26,9 @@ EOF
   exit 1
 fi
 
+echo "=== Carregando variaveis do .env ==="
+export $(grep -v '^#' "$ENV_FILE" | grep -v '^$' | xargs)
+
 echo "=== Build das imagens ==="
 docker build -t veron-api:latest "$APP_DIR/backend"
 docker build -t veron-web:latest "$APP_DIR"
