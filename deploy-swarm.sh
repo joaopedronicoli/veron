@@ -38,8 +38,13 @@ echo "=== Deploy do stack ==="
 docker stack deploy -c "$APP_DIR/docker-compose.yml" "$APP_NAME"
 
 echo ""
+echo "=== Forcando atualizacao dos servicos ==="
+docker service update --force "${APP_NAME}_backend"
+docker service update --force "${APP_NAME}_frontend"
+
+echo ""
 echo "=== Aguardando backend iniciar ==="
-sleep 10
+sleep 15
 
 # Roda migrations
 CONTAINER_ID=$(docker ps -q -f name="${APP_NAME}_backend" | head -1)
